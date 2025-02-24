@@ -1,5 +1,6 @@
 version: '3'
 services:
+
   kafdrop:
     image: obsidiandynamics/kafdrop
     container_name: kafdrop
@@ -14,6 +15,8 @@ services:
     container_name: kafka-1
     ports:
       - 29092:9092
+    env_file:
+      - .env
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: 'broker,controller'
@@ -21,7 +24,7 @@ services:
       KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093'
       KAFKA_LISTENERS: 'PLAINTEXT://:19092,CONTROLLER://:9093,PLAINTEXT_HOST://:9092'
       KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-1:19092,PLAINTEXT_HOST://192.168.1.30:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-1:19092,PLAINTEXT_HOST://${EXTERNAL_IP}:29092
       KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
       CLUSTER_ID: '019528de-40be-79ed-a664-3343b5e40613'
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
@@ -38,6 +41,8 @@ services:
     container_name: kafka-2
     ports:
       - 39092:9092
+    env_file:
+      - .env
     environment:
       KAFKA_NODE_ID: 2
       KAFKA_PROCESS_ROLES: 'broker,controller'
@@ -45,7 +50,7 @@ services:
       KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093'
       KAFKA_LISTENERS: 'PLAINTEXT://:19092,CONTROLLER://:9093,PLAINTEXT_HOST://:9092'
       KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-2:19092,PLAINTEXT_HOST://192.168.1.30:39092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-2:19092,PLAINTEXT_HOST://${EXTERNAL_IP}:39092
       KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
       CLUSTER_ID: '019528de-40be-79ed-a664-3343b5e40613'
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
@@ -56,13 +61,14 @@ services:
       KAFKA_NUM_PARTITIONS: 1
       KAFKA_LOG_RETENTION_HOURS: 48
 
-
   kafka-3:
     image: apache/kafka:latest
     hostname: kafka-3
     container_name: kafka-3
     ports:
       - 49092:9092
+    env_file:
+      - .env
     environment:
       KAFKA_NODE_ID: 3
       KAFKA_PROCESS_ROLES: 'broker,controller'
@@ -70,7 +76,7 @@ services:
       KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093'
       KAFKA_LISTENERS: 'PLAINTEXT://:19092,CONTROLLER://:9093,PLAINTEXT_HOST://:9092'
       KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-3:19092,PLAINTEXT_HOST://192.168.1.30:49092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-3:19092,PLAINTEXT_HOST://${EXTERNAL_IP}:49092
       KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
       CLUSTER_ID: '019528de-40be-79ed-a664-3343b5e40613'
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
@@ -101,3 +107,4 @@ services:
   #   tty: true
   #   environment:
   #     KSQL_KSQL_SERVER_URL: "http://ksqldb-server:8088"  
+
