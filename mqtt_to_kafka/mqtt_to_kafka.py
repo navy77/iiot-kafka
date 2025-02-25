@@ -47,12 +47,8 @@ class MQTTSubscriber:
             self.kafka_producer(k_topic,k_msg)
 
     def kafka_producer(self,k_topic,k_msg):
-
-        time_stamp = int(time.time())
         message = k_msg
-        message['time_stamp'] = time_stamp
         message = json.dumps(message).encode('utf-8')
-        
         self.producer.produce(topic=k_topic,key=k_topic,value=message)
         self.producer.flush()
 
