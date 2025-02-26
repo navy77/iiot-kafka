@@ -1,12 +1,21 @@
-from pyflink.table import TableEnvironment, EnvironmentSettings,DataTypes
+from pyflink.datastream import StreamExecutionEnvironment
+from pyflink.table import StreamTableEnvironment, EnvironmentSettings
+from pyflink.table.expressions import lit,col
+from pyflink.table.window import Tumble
 
 def streaming():
-    streaming_setting = EnvironmentSettings.in_streaming_mode()
-    streaming_tb_env = TableEnvironment.create(streaming_setting)
+    # create streaming envionment
+    stream_env = StreamExecutionEnvironment.get_execution_environment()
+    stream_settings = EnvironmentSettings.new_instance().in_streaming_mode().build()
+
+    # create table envionment
+    tb_env =StreamTableEnvironment.create(stream_execution_environment=stream_env,
+                                          environment_settings=stream_settings)
 
     jar_path = "D:\\iiot-kafka\\pyflink\\flink-sql-connector-kafka-3.4.0-1.20.jar"
-    streaming_tb_env.get_config().get_configuration().set_string("pipeline.jars", "file:///" + jar_path)
+    tb_env.get_config().get_configuration().set_string("pipeline.jars", "file:///" + jar_path)
 
+    # create kafka source table
     source_kafka1= """
     CREATE TABLE source_table_1 (
         topic VARCHAR,
@@ -30,25 +39,19 @@ def streaming():
         'format' = 'json'
     )
     """
-    
-    streaming_tb_env.execute_sql(source_kafka1)
-    source_kafka1 = streaming_tb_env.from_path('source_table_1')
+    tb_env.execute_sql(source_kafka1)
+
+    # create and initiate loading of source Table
+    tb_kafka_stream = tb_env.from_path('source_table_1')
 
     # print schema
     print("schema")
-    source_kafka1.print_schema()
+    tb_kafka_stream.print_schema()
+
+    # Define Tumbling Window Aggregate Calculation of Revenue per Seller
 
     # query data
-    tunbling_window_sql = """
-    SELECT 
-        window_start,
-        window_end,
-        SUM(data1) AS
-        ttl_data1
-    FROM TUMBLE(source_table_1,DESCRIPTOR(ts), INTERVAL '10' MINUTES)
-    GROUP BY window_start,window_end
-    """
-    
+    tunbling_window_sql = tb_kafka_stream.window(Tumble.over(lit(30).seconds))
     # excute query
     result_table = streaming_tb_env.sql_query(tunbling_window_sql)
     # print result
