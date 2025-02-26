@@ -52,7 +52,6 @@ def main():
             'format' = 'json'
         )
     """
-
     tbl_env.execute_sql(src_ddl)
 
     # create and initiate loading of source Table

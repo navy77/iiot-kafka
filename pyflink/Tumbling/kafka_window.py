@@ -48,10 +48,16 @@ def streaming():
     print("schema")
     tb_kafka_stream.print_schema()
 
-    # Define Tumbling Window Aggregate Calculation of Revenue per Seller
-
-    # query data
-    tunbling_window_sql = tb_kafka_stream.window(Tumble.over(lit(30).seconds))
+    # Define Tumbling Window Aggregate for every 30 second
+    tunbling_window_sql = tb_kafka_stream.window(Tumble.over(lit(30).seconds)
+                                                 .on(tb_kafka_stream.ts)
+                                                 .alias('w'))\
+                                            .group_by(col('w'),tb_kafka_stream.topic)\
+                                            .select(tb_kafka_stream.topic,
+                                                    col('w').start.alias('window_start'),
+                                                    col('w').end.alias('window_end'),
+                                                    (tb_kafka_stream.data1).sum.alias('window_sales'))
+    tunbling_window_sql.execute_sql()                                                 
     # excute query
     result_table = streaming_tb_env.sql_query(tunbling_window_sql)
     # print result
