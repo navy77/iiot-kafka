@@ -12,7 +12,8 @@ def streaming():
     tb_env =StreamTableEnvironment.create(stream_execution_environment=stream_env,
                                           environment_settings=stream_settings)
 
-    jar_path = "D:\\iiot-kafka\\pyflink\\flink-sql-connector-kafka-3.4.0-1.20.jar"
+    jar_path = "E:\\iiot-kafka\\pyflink\\flink-sql-connector-kafka-3.4.0-1.20.jar"
+
     tb_env.get_config().get_configuration().set_string("pipeline.jars", "file:///" + jar_path)
 
     # create kafka source table
@@ -29,13 +30,13 @@ def streaming():
         data8 INT,
         data9 INT,
         data10 INT,
-        ts TIMESTAMP_LTZ(3) METADATA FROM 'timestamp'
+        ts AS PROCTIME()
     ) WITH (
         'connector' = 'kafka',
         'topic' = 'k_datamicdemo1',
-        'properties.bootstrap.servers' = '192.168.0.179:29092,192.168.0.179:39092,192.168.0.179:49092',
-        'properties.group.id' = 'test_1',
-        'scan.startup.mode' = 'latest-offset',
+        'properties.bootstrap.servers' = '192.168.1.30:29092,192.168.1.30:39092,192.168.1.30:49092',
+        'properties.group.id' = 'test_2',
+        'scan.startup.mode' = 'earliest-offset',
         'format' = 'json'
     )
     """
@@ -49,7 +50,7 @@ def streaming():
     tb_kafka_stream.print_schema()
 
     # Define Tumbling Window Aggregate for every 30 second
-    tunbling_window_sql = tb_kafka_stream.window(Tumble.over(lit(30).seconds)
+    tumbling_window = tb_kafka_stream.window(Tumble.over(lit(30).seconds)
                                                  .on(tb_kafka_stream.ts)
                                                  .alias('w'))\
                                             .group_by(col('w'),tb_kafka_stream.topic)\
@@ -57,12 +58,26 @@ def streaming():
                                                     col('w').start.alias('window_start'),
                                                     col('w').end.alias('window_end'),
                                                     (tb_kafka_stream.data1).sum.alias('window_sales'))
-    tunbling_window_sql.execute_sql()                                                 
-    # excute query
-    result_table = streaming_tb_env.sql_query(tunbling_window_sql)
-    # print result
-    result_table.execute().print()
+
+    sink_table = """
+        CREATE TABLE print_sink (
+            topic VARCHAR,
+            window_start TIMESTAMP_LTZ(3),
+            window_end TIMESTAMP_LTZ(3),
+            window_sales BIGINT
+        ) WITH (
+            'connector' = 'kafka',
+            'topic' = 'test111',
+            'properties.bootstrap.servers' = '192.168.1.30:29092,192.168.1.30:39092,192.168.1.30:49092',
+            'format' = 'json'
+        )
+        """
     
+    tb_env.execute_sql(sink_table)
+
+    tumbling_window.execute_insert("print_sink").wait()
+    tb_env.execute('tbl-api-tumbling-windows-demo')
+
 def main():
     streaming()
 
